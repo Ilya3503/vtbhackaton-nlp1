@@ -5,11 +5,14 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
-      - ./src:/usr/src/app/src
+      - ./src:/app/src  # This maps the entire src folder
     environment:
-      - PYTHONPATH=/usr/src/app/src
+      - PYTHONPATH=/app/src
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/vtbhackaton
+    restart: unless-stopped
 
   db:
     image: postgres:15
@@ -22,6 +25,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vtbhackaton"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   pgdata:

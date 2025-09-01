@@ -1,14 +1,11 @@
 from contextlib import asynccontextmanager
-from http.client import HTTPException
-from typing import List
-
-from fastapi import FastAPI, Depends
-
+from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import List
 
-from app.db import get_session, init_db
-from app.models import Vacancy, VacancyCreate, VacancyResponse
+from db import init_db, get_session
+from models import Vacancy, VacancyCreate, VacancyResponse
 
 
 @asynccontextmanager
