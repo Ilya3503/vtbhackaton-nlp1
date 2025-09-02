@@ -2,10 +2,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession as SQLModelAsyncSession
+import os
 
 
 
-DATABASE_URL = "postgresql+asyncpg://postgres:password@db:5432/nlp_hr_db"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@db:5432/postgres")
 
 # Создаем асинхронный движок
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)

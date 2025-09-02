@@ -4,8 +4,8 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List
 
-from db import init_db, get_session
-from models import Vacancy, VacancyCreate, VacancyResponse
+from .db import init_db, get_session
+from .models import Vacancy, VacancyCreate, VacancyResponse
 
 
 @asynccontextmanager
