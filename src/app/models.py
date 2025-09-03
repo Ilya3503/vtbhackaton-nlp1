@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime
+from sqlalchemy.orm import selectinload
 
 
 # Базовая модель вакансии без ID (для создания)
@@ -18,7 +19,7 @@ class Vacancy(VacancyBase, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
     # СВЯЗЬ: у одной вакансии может быть много вопросов
-    questions: Optional[List["Question"]] = Relationship(back_populates="vacancy")
+    questions: List["Question"] = Relationship(back_populates="vacancy")
 
 
 
@@ -47,11 +48,16 @@ class QuestionCreate(SQLModel):
 class VacancyCreate(VacancyBase):
     pass
 
+class QuestionResponse(SQLModel):
+    id: int
+    question_text: str
+    competence: str
+    weight: float
 
 # Модель для ответа API (что возвращаем клиенту)
 class VacancyResponse(VacancyBase):
     id: int
     created_at: datetime
-    questions: List[QuestionCreate] = Field(default_factory=list)
+    questions: List[QuestionResponse] = Field(default_factory=list)
 
 
