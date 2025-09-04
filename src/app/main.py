@@ -3,11 +3,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List
+from datetime import datetime
 
 from sqlalchemy.orm import selectinload
 
 from .db import init_db, get_session
-from .models import Vacancy, VacancyCreate, QuestionResponse, VacancyResponse
+from .models import Vacancy, VacancyCreate, QuestionResponse, VacancyResponse, VacancyUpdate
 
 
 @asynccontextmanager

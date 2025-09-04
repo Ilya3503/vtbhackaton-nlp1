@@ -45,7 +45,7 @@ class QuestionCreate(SQLModel):
 
 
 # Модель для создания вакансии (тело запроса)
-class VacancyCreate(VacancyBase):
+class VacancyCreate(SQLModel):
     vacancy_title: str
 
 class QuestionResponse(SQLModel):
