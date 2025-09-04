@@ -7,8 +7,8 @@ from sqlalchemy.orm import selectinload
 # Базовая модель вакансии без ID (для создания)
 class VacancyBase(SQLModel):
     vacancy_title: str
-    description: str
-    requirements: str
+    description: Optional[str] = None
+    requirements: Optional[str] = None
     salary: Optional[int] = None
     status: str = Field(default="created")
 
@@ -46,13 +46,21 @@ class QuestionCreate(SQLModel):
 
 # Модель для создания вакансии (тело запроса)
 class VacancyCreate(VacancyBase):
-    pass
+    vacancy_title: str
 
 class QuestionResponse(SQLModel):
     id: int
     question_text: str
     competence: str
     weight: float
+
+
+class VacancyUpdate(SQLModel):
+    description: Optional[str] = None
+    requirements: Optional[str] = None
+    salary: Optional[int] = None
+    status: Optional[str] = None
+
 
 # Модель для ответа API (что возвращаем клиенту)
 class VacancyResponse(VacancyBase):
