@@ -54,6 +54,12 @@ class QuestionResponse(SQLModel):
     competence: str
     weight: float
 
+class QuestionUpdate(SQLModel):
+    question_text: Optional[str] = None
+    competence: Optional[str] = None
+    weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
+
 
 class VacancyUpdate(SQLModel):
     description: Optional[str] = None

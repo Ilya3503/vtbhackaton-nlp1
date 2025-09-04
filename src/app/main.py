@@ -8,7 +8,16 @@ from datetime import datetime
 from sqlalchemy.orm import selectinload
 
 from .db import init_db, get_session
-from .models import Vacancy, VacancyCreate, QuestionResponse, VacancyResponse, VacancyUpdate
+from .models import (
+    Vacancy,
+    VacancyCreate,
+    VacancyUpdate,
+    VacancyResponse,
+    Question,
+    QuestionCreate,
+    QuestionUpdate,
+    QuestionResponse,
+)
 
 
 @asynccontextmanager
@@ -153,3 +162,103 @@ async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, 
             for q in vacancy.questions
         ],
     )
+
+
+
+
+
+
+@app.post("/vacancies/{vacancy_id}/questions", response_model=List[QuestionResponse])
+async def add_questions_to_vacancy(
+    vacancy_id: int,
+    questions: List[QuestionCreate],
+    session: AsyncSession = Depends(get_session),
+):
+    # Проверяем, есть ли такая вакансия
+    result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
+    vacancy = result.scalar_one_or_none()
+    if not vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+
+    created_questions = []
+    for q in questions:
+        new_question = Question(
+            question_text=q.question_text,
+            competence=q.competence,
+            weight=q.weight,
+            vacancy_id=vacancy_id,
+        )
+        session.add(new_question)
+        created_questions.append(new_question)
+
+    await session.commit()
+
+    # Обновляем объекты после сохранения (чтобы получить id)
+    for q in created_questions:
+        await session.refresh(q)
+
+    return [
+        QuestionResponse(
+            id=q.id,
+            question_text=q.question_text,
+            competence=q.competence,
+            weight=q.weight,
+        )
+        for q in created_questions
+    ]
+
+
+
+
+
+@app.delete("/questions/{question_id}", response_model=QuestionResponse)
+async def delete_question(
+    question_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(select(Question).where(Question.id == question_id))
+    question = result.scalar_one_or_none()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    await session.delete(question)
+    await session.commit()
+
+    return QuestionResponse(
+        id=question.id,
+        question_text=question.question_text,
+        competence=question.competence,
+        weight=question.weight,
+    )
+
+
+
+
+
+@app.put("/questions/{question_id}", response_model=QuestionResponse)
+async def update_question(
+    question_id: int,
+    updated_data: QuestionUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(select(Question).where(Question.id == question_id))
+    question = result.scalar_one_or_none()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    # Обновляем поля
+    question.question_text = updated_data.question_text
+    question.competence = updated_data.competence
+    question.weight = updated_data.weight
+
+    session.add(question)
+    await session.commit()
+    await session.refresh(question)
+
+    return QuestionResponse(
+        id=question.id,
+        question_text=question.question_text,
+        competence=question.competence,
+        weight=question.weight,
+    )
+
