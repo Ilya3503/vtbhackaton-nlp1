@@ -13,10 +13,18 @@ class VacancyBase(SQLModel):
     status: str = Field(default="created")
 
 
+
 # Модель вакансии ДЛЯ ТАБЛИЦЫ БД
 class Vacancy(VacancyBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.now)
+
+    # AI подсказки (nullable, строковые поля)
+    ai_description_suggestion: Optional[str] = Field(default=None, sa_column=None)
+    ai_requirements_suggestion: Optional[str] = Field(default=None, sa_column=None)
+    ai_salary_suggestion: Optional[str] = Field(default=None, sa_column=None)
+    # Опционально: кеш подсказок для вопросов (JSON строка)
+    ai_questions_suggestions: Optional[str] = Field(default=None, sa_column=None)
 
     # СВЯЗЬ: у одной вакансии может быть много вопросов
     questions: List["Question"] = Relationship(back_populates="vacancy")
@@ -75,3 +83,8 @@ class VacancyResponse(VacancyBase):
     questions: List[QuestionResponse] = Field(default_factory=list)
 
 
+
+class VacancyResponseAI(VacancyResponse):
+    ai_description_suggestion: Optional[str] = None
+    ai_requirements_suggestion: Optional[str] = None
+    ai_salary_suggestion: Optional[int] = None

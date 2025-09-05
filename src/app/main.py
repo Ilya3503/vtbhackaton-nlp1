@@ -5,6 +5,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List
 from datetime import datetime
 
+import asyncio
+
 from sqlalchemy.orm import selectinload
 
 from .db import init_db, get_session
@@ -13,12 +15,14 @@ from .models import (
     VacancyCreate,
     VacancyUpdate,
     VacancyResponse,
+    VacancyResponseAI,
     Question,
     QuestionCreate,
     QuestionUpdate,
     QuestionResponse,
 )
 from .routers import nlp
+from .services.ai_service import generate_ai_vacancy_suggestions
 
 
 @asynccontextmanager
@@ -106,7 +110,7 @@ async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = De
 
 
 
-@app.post("/vacancies", response_model=VacancyResponse)
+@app.post("/vacancies", response_model=VacancyResponseAI)
 async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession = Depends(get_session)):
     new_vacancy = Vacancy(
         vacancy_title=vacancy.vacancy_title,
@@ -117,7 +121,16 @@ async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession 
     await session.commit()
     await session.refresh(new_vacancy)
 
-    return VacancyResponse(
+    try:
+        ai_data = await asyncio.to_thread(generate_ai_vacancy_suggestions, new_vacancy.vacancy_title)
+        if not isinstance(ai_data, dict):
+            ai_data = {"description": None, "requirements": None, "salary": None}
+    except Exception as e:
+        print("AI generation failed:", e)
+        ai_data = {"description": None, "requirements": None, "salary": None}
+
+
+    return VacancyResponseAI(
         id=new_vacancy.id,
         vacancy_title=new_vacancy.vacancy_title,
         description=new_vacancy.description,
@@ -126,6 +139,9 @@ async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession 
         status=new_vacancy.status,
         created_at=new_vacancy.created_at,
         questions=[],
+        ai_description_suggestion=new_vacancy.ai_description_suggestion,
+        ai_requirements_suggestion=new_vacancy.ai_requirements_suggestion,
+        ai_salary_suggestion=new_vacancy.ai_salary_suggestion,
     )
 
 
