@@ -18,6 +18,7 @@ from .models import (
     QuestionUpdate,
     QuestionResponse,
 )
+from .routers import nlp
 
 
 @asynccontextmanager
@@ -30,6 +31,8 @@ app = FastAPI(
     description="Backend для NLP-продукта по работе с вакансиями и резюме",
     lifespan=lifespan,
 )
+
+app.include_router(nlp.router)
 
 
 
@@ -164,6 +167,39 @@ async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, 
     )
 
 
+@app.delete("/vacancies/{vacancy_id}", response_model=VacancyResponse)
+async def delete_vacancy(
+    vacancy_id: int,
+    session: AsyncSession = Depends(get_session)):
+    result = await session.execute(
+        select(Vacancy).where(Vacancy.id == vacancy_id).options(selectinload(Vacancy.questions))
+    )
+    vacancy = result.scalar_one_or_none()
+    if not vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+
+    await session.delete(vacancy)
+    await session.commit()
+
+    return VacancyResponse(
+        id=vacancy.id,
+        vacancy_title=vacancy.vacancy_title,
+        description=vacancy.description,
+        requirements=vacancy.requirements,
+        salary=vacancy.salary,
+        status=vacancy.status,
+        created_at=vacancy.created_at,
+        questions=[
+            QuestionResponse(
+                id=q.id,
+                question_text=q.question_text,
+                competence=q.competence,
+                weight=q.weight,
+            )
+            for q in vacancy.questions
+        ],
+    )
+
 
 
 
@@ -208,6 +244,20 @@ async def add_questions_to_vacancy(
     ]
 
 
+@app.get("/questions", response_model=List[QuestionResponse])
+async def get_all_questions(session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Question))
+    questions = result.scalars().all()
+
+    return [
+        QuestionResponse(
+            id=q.id,
+            question_text=q.question_text,
+            competence=q.competence,
+            weight=q.weight,
+        )
+        for q in questions
+    ]
 
 
 
