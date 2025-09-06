@@ -1,0 +1,26 @@
+<div>
+  <h1 class="text-2xl font-bold mb-6">Вакансии</h1>
+  <button hx-get="hr-vacancy-form.html" hx-target="#content"
+    class="mb-4 px-4 py-2 bg-green-600 text-white rounded-lg">+ Новая вакансия</button>
+  <table class="w-full border-collapse">
+    <thead>
+      <tr class="bg-gray-200 text-left">
+        <th class="p-2">Вакансия</th>
+        <th class="p-2">Дата</th>
+        <th class="p-2">Кандидаты</th>
+        <th class="p-2">Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-b">
+        <td class="p-2">Python-разработчик</td>
+        <td class="p-2">25.08.2025</td>
+        <td class="p-2">12</td>
+        <td class="p-2">
+          <button hx-get="hr-candidates.html" hx-target="#content"
+            class="px-3 py-1 bg-blue-500 text-white rounded">👤 Кандидаты</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

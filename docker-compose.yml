@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    build: ./backend
     container_name: vtbhackaton-nlp1-web
     ports:
       - "8000:8000"
@@ -10,11 +10,23 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./src:/app/src  # This maps the entire src folder
+      - ./backend/src:/app/src
     environment:
       - PYTHONPATH=/app/src
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/postgres
     restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: vtbhackaton-nlp1-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    restart: unless-stopped
+    volumes:
+      - ./frontend/static:/usr/share/nginx/html
+
 
   db:
     image: postgres:15

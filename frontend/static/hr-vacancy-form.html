@@ -1,0 +1,18 @@
+<div class="max-w-2xl mx-auto bg-white shadow rounded-lg p-6">
+  <h2 class="text-xl font-bold mb-4">Создание вакансии</h2>
+  <form class="space-y-4">
+    <input type="text" placeholder="Название должности" class="w-full p-3 border rounded-lg" />
+    <textarea placeholder="Описание" class="w-full p-3 border rounded-lg"></textarea>
+    <label>Компетенции:</label>
+    <div class="space-y-2">
+      <div>
+        Python <input type="range" min="1" max="10" value="5" class="ml-4" />
+      </div>
+      <div>
+        Communication <input type="range" min="1" max="10" value="5" class="ml-4" />
+      </div>
+    </div>
+    <button hx-get="hr-dashboard.html" hx-target="#content" 
+      class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Сохранить</button>
+  </form>
+</div>

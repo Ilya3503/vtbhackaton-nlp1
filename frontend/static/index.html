@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>VTBInterview AI — Главная</title>
+  <script src="https://unpkg.com/htmx.org@1.9.9"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md text-center">
+    <h1 class="text-2xl font-bold mb-6">VTBInterview AI</h1>
+    <p class="text-gray-600 mb-6">Выберите роль для входа:</p>
+
+<button 
+  class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+  hx-get="hr-login.html"
+  hx-target="#content"
+  hx-swap="innerHTML">
+  👔 HR
+</button>
+
+<button 
+  class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+  hx-get="candidate-start.html"
+  hx-target="#content"
+  hx-swap="innerHTML">
+  👤 Кандидат
+</button>
+
+
+  <!-- Контейнер для загрузки страниц -->
+  <div id="content" class="mt-8 w-full max-w-4xl mx-auto"></div>
+
+</body>
+</html>
