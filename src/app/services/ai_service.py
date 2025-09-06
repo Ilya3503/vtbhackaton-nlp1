@@ -1,11 +1,9 @@
-import os
-
-from openai import OpenAI
+import openai
 import json
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 import os
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def generate_ai_vacancy_suggestions(title: str) -> Dict[str, Any]:
     prompt = f"""
@@ -24,13 +22,13 @@ def generate_ai_vacancy_suggestions(title: str) -> Dict[str, Any]:
 }}
     """
     try:
-        response = client.chat.completions.create(
+        # ИСПРАВЛЕНО: используй openai.ChatCompletion.create (старый синтаксис)
+        response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
         )
         content = response.choices[0].message.content.strip()
-
         return json.loads(content)
     except Exception as e:
         print(f"AI vacancy generation error: {e}")

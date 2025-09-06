@@ -112,6 +112,10 @@ async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = De
 
 @app.post("/vacancies", response_model=VacancyResponseAI)
 async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession = Depends(get_session)):
+    """
+    Создает вакансию и возвращает AI-подсказки в одном ответе
+    """
+    # 1. Создаем и сохраняем вакансию
     new_vacancy = Vacancy(
         vacancy_title=vacancy.vacancy_title,
         status="created",
@@ -121,27 +125,29 @@ async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession 
     await session.commit()
     await session.refresh(new_vacancy)
 
+    # 2. Получаем AI-подсказки (синхронный вызов)
+    ai_data = {"description": None, "requirements": None, "salary": None}
     try:
-        ai_data = await asyncio.to_thread(generate_ai_vacancy_suggestions, new_vacancy.vacancy_title)
-        if not isinstance(ai_data, dict):
-            ai_data = {"description": None, "requirements": None, "salary": None}
+        ai_data = generate_ai_vacancy_suggestions(new_vacancy.vacancy_title)
     except Exception as e:
-        print("AI generation failed:", e)
-        ai_data = {"description": None, "requirements": None, "salary": None}
+        # Логируем ошибку, но не падаем - возвращаем null подсказки
+        print(f"AI suggestion error: {e}")
 
-
+    # 3. Возвращаем ответ с подсказками
     return VacancyResponseAI(
         id=new_vacancy.id,
         vacancy_title=new_vacancy.vacancy_title,
-        description=new_vacancy.description,
-        requirements=new_vacancy.requirements,
-        salary=new_vacancy.salary,
+        description=new_vacancy.description,  # из БД (пока null)
+        requirements=new_vacancy.requirements,  # из БД (пока null)
+        salary=new_vacancy.salary,  # из БД (пока null)
         status=new_vacancy.status,
         created_at=new_vacancy.created_at,
-        questions=[],
-        ai_description_suggestion=new_vacancy.ai_description_suggestion,
-        ai_requirements_suggestion=new_vacancy.ai_requirements_suggestion,
-        ai_salary_suggestion=new_vacancy.ai_salary_suggestion,
+        questions=[],  # пока нет вопросов
+
+        # AI-подсказки
+        ai_description_suggestion=ai_data.get("description"),
+        ai_requirements_suggestion=ai_data.get("requirements"),
+        ai_salary_suggestion=ai_data.get("salary"),
     )
 
 
