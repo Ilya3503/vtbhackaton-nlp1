@@ -34,6 +34,11 @@ app = FastAPI(
     title="NLP HR Assistant",
     description="Backend для NLP-продукта по работе с вакансиями и резюме",
     lifespan=lifespan,
+    openapi_tags = [
+        {"name": "Создание вакансии", "description": "Endpoints для создания вакансий: два способа"},
+        {"name": "Получение и редактирование вакансий", "description": "Endpoints для работы с вакансиями"}
+        {"name": "Вопросы", "description": "Endpoints для работы с вопросами"},
+    ]
 )
 
 app.include_router(nlp.router)
@@ -46,7 +51,7 @@ def health_check_function():
 
 
 
-@app.get("/vacancies", response_model=List[VacancyResponse])
+@app.get("/vacancies", tags=["Получение и редактирование вакансий"], summary = "Получить список всех вакансий", response_model=List[VacancyResponse])
 async def get_vacancies_function(session: AsyncSession = Depends(get_session)):
     result = await session.execute(
         select(Vacancy).options(selectinload(Vacancy.questions))
@@ -77,7 +82,7 @@ async def get_vacancies_function(session: AsyncSession = Depends(get_session)):
 
 
 
-@app.get("/vacancies/{vacancy_id}", response_model=VacancyResponse)
+@app.get("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Получить вакансию по id", response_model=VacancyResponse)
 async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = Depends(get_session)):
     result = await session.execute(
         select(Vacancy)
@@ -110,7 +115,7 @@ async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = De
 
 
 
-@app.post("/vacancies", response_model=VacancyResponseAI)
+@app.post("/vacancies", tags=["Создание вакансии"], summary = "Создать вакансию", response_model=VacancyResponseAI)
 async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession = Depends(get_session)):
     """
     Создает вакансию и возвращает AI-подсказки в одном ответе
@@ -153,7 +158,7 @@ async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession 
 
 
 
-@app.put("/vacancies/{vacancy_id}", response_model=VacancyResponse)
+@app.put("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Обновить информацию о вакансии", response_model=VacancyResponse)
 async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, session: AsyncSession = Depends(get_session)):
     result = await session.execute(
         select(Vacancy).where(Vacancy.id == vacancy_id).options(selectinload(Vacancy.questions))
@@ -189,7 +194,7 @@ async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, 
     )
 
 
-@app.delete("/vacancies/{vacancy_id}", response_model=VacancyResponse)
+@app.delete("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Удалить вакансию", response_model=VacancyResponse)
 async def delete_vacancy(
     vacancy_id: int,
     session: AsyncSession = Depends(get_session)):
@@ -226,7 +231,7 @@ async def delete_vacancy(
 
 
 
-@app.post("/vacancies/{vacancy_id}/questions", response_model=List[QuestionResponse])
+@app.post("/vacancies/{vacancy_id}/questions", tags=["Вопросы"], summary = "Добавить вопросы к вакансии по id", response_model=List[QuestionResponse])
 async def add_questions_to_vacancy(
     vacancy_id: int,
     questions: List[QuestionCreate],
@@ -266,7 +271,7 @@ async def add_questions_to_vacancy(
     ]
 
 
-@app.get("/questions", response_model=List[QuestionResponse])
+@app.get("/questions", tags=["Вопросы"], summary = "Получить список всех вопросов", response_model=List[QuestionResponse])
 async def get_all_questions(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(Question))
     questions = result.scalars().all()
@@ -283,7 +288,7 @@ async def get_all_questions(session: AsyncSession = Depends(get_session)):
 
 
 
-@app.delete("/questions/{question_id}", response_model=QuestionResponse)
+@app.delete("/questions/{question_id}", tags=["Вопросы"], summary = "Удалить вопрос", response_model=QuestionResponse)
 async def delete_question(
     question_id: int,
     session: AsyncSession = Depends(get_session),
@@ -307,7 +312,7 @@ async def delete_question(
 
 
 
-@app.put("/questions/{question_id}", response_model=QuestionResponse)
+@app.put("/questions/{question_id}", tags=["Вопросы"], summary = "Обновить вопрос", response_model=QuestionResponse)
 async def update_question(
     question_id: int,
     updated_data: QuestionUpdate,

@@ -51,7 +51,7 @@ async def parse_docx_to_vacancy(file) -> dict:
 # ---------------------------
 # Эндпоинт: загрузка DOCX и сохранение в базу
 # ---------------------------
-@router.post("/nlp/upload-vacancy", response_model=VacancyCreate)
+@router.post("/nlp/upload-vacancy", tags=["Создание вакансии"], summary = "Загрузить вакансию файлом docx", response_model=VacancyCreate)
 async def upload_vacancy(
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session)
