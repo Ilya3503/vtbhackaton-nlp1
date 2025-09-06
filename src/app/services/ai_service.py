@@ -1,8 +1,11 @@
+import os
+
 from openai import OpenAI
 import json
 from typing import Optional, Dict, Any
+import os
 
-client = OpenAI(api_key="")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_ai_vacancy_suggestions(title: str) -> Dict[str, Any]:
     prompt = f"""
