@@ -2,8 +2,10 @@
 
 __pycache__/
 
-*.pyc
-*.pyo
-*.pyd
 
 .idea/
+
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
