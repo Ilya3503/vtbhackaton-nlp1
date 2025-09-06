@@ -5,6 +5,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List
 from datetime import datetime
 
+from fastapi.middleware.cors import CORSMiddleware
+
 import asyncio
 
 from sqlalchemy.orm import selectinload
@@ -20,9 +22,10 @@ from .models import (
     QuestionCreate,
     QuestionUpdate,
     QuestionResponse,
+    QuestionAISuggestion,
 )
 from .routers import nlp
-from .services.ai_service import generate_ai_vacancy_suggestions
+from .services.ai_service import generate_ai_vacancy_suggestions, get_questions_ai_suggestions
 
 
 @asynccontextmanager
@@ -36,9 +39,17 @@ app = FastAPI(
     lifespan=lifespan,
     openapi_tags = [
         {"name": "Создание вакансии", "description": "Endpoints для создания вакансий: два способа"},
-        {"name": "Получение и редактирование вакансий", "description": "Endpoints для работы с вакансиями"}
+        {"name": "Получение и редактирование вакансий", "description": "Endpoints для работы с вакансиями"},
         {"name": "Вопросы", "description": "Endpoints для работы с вопросами"},
     ]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(nlp.router)
@@ -226,6 +237,29 @@ async def delete_vacancy(
             for q in vacancy.questions
         ],
     )
+
+
+
+
+
+@app.get("/vacancies/{vacancy_id}/questions_suggestions", tags=["Вопросы"], summary = "Получить подсказки вопросов от ИИ-ассистента", response_model=List[QuestionAISuggestion])
+async def get_question_suggestions(vacancy_id: int, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
+    vacancy = result.scalar_one_or_none()
+    if not vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+
+    try:
+        ai_questions = get_questions_ai_suggestions(
+            title=vacancy.vacancy_title or "",
+            description=vacancy.description or "",
+            requirements=vacancy.requirements or "",
+        )
+    except Exception as e:
+        print(f"AI question suggestions error: {e}")
+        return []
+
+    return [QuestionAISuggestion(**q) for q in ai_questions]
 
 
 

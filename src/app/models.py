@@ -88,3 +88,10 @@ class VacancyResponseAI(VacancyResponse):
     ai_description_suggestion: Optional[str] = None
     ai_requirements_suggestion: Optional[str] = None
     ai_salary_suggestion: Optional[int] = None
+
+
+
+class QuestionAISuggestion(SQLModel):
+    question_text: str
+    competence: str
+    weight: float
