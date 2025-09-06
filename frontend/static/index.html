@@ -6,31 +6,33 @@
   <script src="https://unpkg.com/htmx.org@1.9.9"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
-  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md text-center">
-    <h1 class="text-2xl font-bold mb-6">VTBInterview AI</h1>
-    <p class="text-gray-600 mb-6">Выберите роль для входа:</p>
+  <!-- Верхняя панель с выбором роли -->
+  <div class="absolute top-6 right-6 bg-white shadow-md rounded-xl px-4 py-3 flex gap-2 items-center">
+    <span class="text-sm text-gray-500 mr-2">Войти как:</span>
+    <button
+      class="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700"
+      hx-get="hr-login.html"
+      hx-target="#content"
+      hx-swap="innerHTML">
+      👔 HR
+    </button>
 
-<button 
-  class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-  hx-get="hr-login.html"
-  hx-target="#content"
-  hx-swap="innerHTML">
-  👔 HR
-</button>
+    <button
+      class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-green-700"
+      hx-get="candidate-start.html"
+      hx-target="#content"
+      hx-swap="innerHTML">
+      👤 Кандидат
+    </button>
+  </div>
 
-<button 
-  class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-  hx-get="candidate-start.html"
-  hx-target="#content"
-  hx-swap="innerHTML">
-  👤 Кандидат
-</button>
-
-
-  <!-- Контейнер для загрузки страниц -->
-  <div id="content" class="mt-8 w-full max-w-4xl mx-auto"></div>
+  <!-- Основной контейнер -->
+  <div id="content" class="flex-grow w-full max-w-7xl mx-auto mt-20 bg-white rounded-2xl shadow-xl p-10 overflow-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">VTBInterview AI</h1>
+    <p class="text-gray-500">Выберите роль в правом верхнем углу, чтобы продолжить.</p>
+  </div>
 
 </body>
 </html>

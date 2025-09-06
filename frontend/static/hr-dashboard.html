@@ -4,20 +4,16 @@
   <meta charset="UTF-8">
   <title>HR Assistant</title>
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-8">
 
-  <!-- Заголовок страницы -->
   <h1 class="text-4xl font-bold mb-8 text-gray-800">📋 Список вакансий</h1>
 
-  <!-- Кнопка обновления -->
   <div class="mb-6">
     <button
-      hx-get="/vacancies"
+      hx-get="http://localhost:8000/vacancies"
       hx-target="#vacancy-list"
-      hx-ext="json-enc"
       hx-swap="innerHTML"
       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-lg rounded-xl shadow transition"
     >
@@ -25,55 +21,117 @@
     </button>
   </div>
 
-  <!-- Таблица -->
   <div id="vacancy-list" class="overflow-hidden rounded-xl shadow-lg border bg-white">
     <div class="p-6 text-gray-500">Нажмите "Обновить список", чтобы загрузить вакансии.</div>
   </div>
 
   <script>
-    // Расширение HTMX для рендера JSON в таблицу
-    htmx.defineExtension("json-enc", {
-      transformResponse: function (text, xhr, elt) {
+    document.body.addEventListener("htmx:afterOnLoad", function(evt) {
+      if (evt.detail.target.id === "vacancy-list") {
         try {
-          let data = JSON.parse(text);
+          const data = JSON.parse(evt.detail.xhr.responseText);
+          console.log("Данные получены:", data);
 
           if (Array.isArray(data) && data.length > 0) {
-            // Берём ключи первого объекта как названия столбцов
-            let keys = Object.keys(data[0]);
-
-            return `
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="bg-gray-100 text-left text-gray-700 text-lg">
-                    ${keys.map(k => <th class="p-4 border-b">${k}</th>).join("")}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${data.map(v => `
-                    <tr class="border-b hover:bg-gray-50 transition">
-                      ${keys.map(k => {
-                        let val = v[k] ?? "";
-                        if (typeof val === "string" && val.match(/^\\d{4}-\\d{2}-\\d{2}/)) {
-                          val = new Date(val).toLocaleDateString();
-                        }
-                        return <td class="p-4">${val}</td>;
-                      }).join("")}
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            `;
+            // Создаем таблицу
+            const tableHTML = createVacanciesTable(data);
+            evt.detail.target.innerHTML = tableHTML;
+          } else {
+            evt.detail.target.innerHTML = '<div class="p-6 text-gray-500">Нет вакансий для отображения</div>';
           }
-
-          if (Array.isArray(data) && data.length === 0) {
-            return <div class="p-6 text-gray-500">Нет вакансий</div>;
-          }
-
-          return <pre class="p-6">${JSON.stringify(data, null, 2)}</pre>;
         } catch (e) {
-          return <div class="p-6 text-red-600">Ошибка: ${e.message}</div>;
+          console.error("Ошибка:", e);
+          evt.detail.target.innerHTML = `<div class="p-6 text-red-600">Ошибка: ${e.message}</div>`;
         }
       }
+    });
+
+    function createVacanciesTable(data) {
+      // Выбираем только нужные колонки для отображения
+      const columns = [
+        { key: 'id', title: 'ID', width: 'w-16' },
+        { key: 'vacancy_title', title: 'Должность', width: 'w-48' },
+        { key: 'salary', title: 'Зарплата', width: 'w-32', format: formatSalary },
+        { key: 'status', title: 'Статус', width: 'w-40', format: formatStatus },
+        { key: 'created_at', title: 'Дата создания', width: 'w-48', format: formatDate },
+        { key: 'questions', title: 'Вопросы', width: 'w-24', format: formatQuestions }
+      ];
+
+      return `
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-gray-100 text-left text-gray-700">
+                ${columns.map(col =>
+                  `<th class="p-4 border-b font-semibold ${col.width}">${col.title}</th>`
+                ).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(vacancy => `
+                <tr class="border-b hover:bg-gray-50 transition" data-vacancy-id="${vacancy.id}">
+                  ${columns.map(col => {
+                    const value = vacancy[col.key];
+                    const formattedValue = col.format ? col.format(value) : formatDefault(value);
+                    return `<td class="p-4 align-top">${formattedValue}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="p-4 bg-gray-50 text-sm text-gray-600">
+          Найдено вакансий: ${data.length}
+        </div>
+      `;
+    }
+
+    // Функции форматирования
+    function formatDefault(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      if (typeof value === 'string' && value.trim() === '') return '—';
+      return value;
+    }
+
+    function formatSalary(value) {
+      if (!value || value === 0) return '—';
+      return `${value.toLocaleString('ru-RU')} ₽`;
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      return new Date(value).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatStatus(value) {
+      if (!value) return '—';
+      const statusMap = {
+        'Активный поиск кандидата': '🔍 Активный поиск',
+        'string': '📝 Черновик',
+        'Открыта': '✅ Открыта',
+        'Закрыта': '❌ Закрыта'
+      };
+      return statusMap[value] || value;
+    }
+
+    function formatQuestions(value) {
+      if (!Array.isArray(value)) return '—';
+      return value.length > 0 ? `📋 ${value.length}` : '—';
+    }
+
+    // Обработчик ошибок HTMX
+    document.body.addEventListener("htmx:responseError", function(evt) {
+      document.getElementById("vacancy-list").innerHTML = `
+        <div class="p-6 text-red-600">
+          Ошибка сервера: ${evt.detail.xhr.status} ${evt.detail.xhr.statusText}
+        </div>
+      `;
     });
   </script>
 
