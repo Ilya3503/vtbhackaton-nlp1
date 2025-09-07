@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from .db import init_db
 from .routers import nlp, vacancies, questions, auth
 
-from routers.auth import security
+from .routers.auth import security
 
 
 

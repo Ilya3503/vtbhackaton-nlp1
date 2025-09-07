@@ -1,6 +1,6 @@
 from authx import AuthX, AuthXConfig
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
+from sqlmodel import select, SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import datetime
 
@@ -21,18 +21,16 @@ security = AuthX(config=config)
 
 
 
-class UserRegister:
+class UserRegister(SQLModel):
     email: str
     password: str
 
-class UserLogin:
+class UserLogin(SQLModel):
     email: str
     password: str
 
 
-async def get_current_user(
-        session: AsyncSession = Depends(get_session)
-) -> User:
+async def get_current_user(session: AsyncSession = Depends(get_session)) -> User:
     # AuthX автоматически проверяет куки и декодирует токен
     user_id = await security.get_current_user()
 
@@ -43,9 +41,7 @@ async def get_current_user(
 
 
 @router.post("/register")
-async def register(
-        user_data: UserRegister,
-        session: AsyncSession = Depends(get_session)
+async def register(user_data: UserRegister, session: AsyncSession = Depends(get_session)
 ):
     # Проверяем, нет ли уже такого email
     existing_user = session.exec(select(User).where(User.email == user_data.email)).first()
