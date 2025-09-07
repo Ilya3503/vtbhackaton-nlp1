@@ -1,11 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Optional
 import docx
 import re
 
-from ..models import VacancyCreate, Vacancy
+from ..models import VacancyCreate, Vacancy, User
 from ..db import get_session
+from .auth import get_current_user
 
 router = APIRouter()
 
@@ -54,7 +54,8 @@ async def parse_docx_to_vacancy(file) -> dict:
 @router.post("/nlp/upload-vacancy", tags=["Создание вакансии"], summary = "Загрузить вакансию файлом docx", response_model=VacancyCreate)
 async def upload_vacancy(
     file: UploadFile = File(...),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     if not file.filename.endswith(".docx"):
         raise HTTPException(status_code=400, detail="Только .docx файлы поддерживаются")

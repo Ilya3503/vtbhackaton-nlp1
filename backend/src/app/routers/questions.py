@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..models import *
 from ..db import get_session
 from ..services.ai_service import get_questions_ai_suggestions
+from .auth import get_current_user
 
 
 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/vacancies/{vacancy_id}/questions_suggestions", tags=["Вопросы"], summary = "Получить подсказки вопросов от ИИ-ассистента", response_model=List[QuestionAISuggestion])
-async def get_question_suggestions(vacancy_id: int, session: AsyncSession = Depends(get_session)):
+async def get_question_suggestions(vacancy_id: int, session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
     vacancy = result.scalar_one_or_none()
     if not vacancy:
@@ -41,6 +41,7 @@ async def add_questions_to_vacancy(
     vacancy_id: int,
     questions: List[QuestionCreate],
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     # Проверяем, есть ли такая вакансия
     result = await session.execute(select(Vacancy).where(Vacancy.id == vacancy_id))
@@ -77,7 +78,7 @@ async def add_questions_to_vacancy(
 
 
 @router.get("/questions", tags=["Вопросы"], summary = "Получить список всех вопросов", response_model=List[QuestionResponse])
-async def get_all_questions(session: AsyncSession = Depends(get_session)):
+async def get_all_questions(session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(select(Question))
     questions = result.scalars().all()
 
@@ -97,6 +98,7 @@ async def get_all_questions(session: AsyncSession = Depends(get_session)):
 async def delete_question(
     question_id: int,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     result = await session.execute(select(Question).where(Question.id == question_id))
     question = result.scalar_one_or_none()
@@ -122,6 +124,7 @@ async def update_question(
     question_id: int,
     updated_data: QuestionUpdate,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     result = await session.execute(select(Question).where(Question.id == question_id))
     question = result.scalar_one_or_none()

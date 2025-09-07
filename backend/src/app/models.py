@@ -1,7 +1,15 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from typing import List
 from datetime import datetime
 from sqlalchemy.orm import selectinload
+from typing import Optional
+
+class User(SQLModel):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    hashed_password: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
 
 
 # Базовая модель вакансии без ID (для создания)

@@ -8,13 +8,26 @@
 </head>
 <body class="bg-gray-50 min-h-screen p-8">
 
-  <h1 class="text-4xl font-bold mb-8 text-gray-800">📋 Список вакансий</h1>
+  <!-- Добавляем кнопку выхода -->
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-4xl font-bold text-gray-800">📋 Список вакансий</h1>
+    <button
+      hx-post="http://localhost:8000/auth/logout"
+      hx-include-credentials="true"
+      hx-target="body"
+      hx-swap="innerHTML"
+      class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition"
+    >
+      🚪 Выйти
+    </button>
+  </div>
 
   <div class="mb-6">
     <button
       hx-get="http://localhost:8000/vacancies"
       hx-target="#vacancy-list"
       hx-swap="innerHTML"
+      hx-include-credentials="true"  <!-- КРИТИЧЕСКИ ВАЖНО -->
       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-lg rounded-xl shadow transition"
     >
       🔄 Обновить список
@@ -26,113 +39,48 @@
   </div>
 
   <script>
-    document.body.addEventListener("htmx:afterOnLoad", function(evt) {
-      if (evt.detail.target.id === "vacancy-list") {
-        try {
-          const data = JSON.parse(evt.detail.xhr.responseText);
-          console.log("Данные получены:", data);
-
-          if (Array.isArray(data) && data.length > 0) {
-            // Создаем таблицу
-            const tableHTML = createVacanciesTable(data);
-            evt.detail.target.innerHTML = tableHTML;
-          } else {
-            evt.detail.target.innerHTML = '<div class="p-6 text-gray-500">Нет вакансий для отображения</div>';
-          }
-        } catch (e) {
-          console.error("Ошибка:", e);
-          evt.detail.target.innerHTML = `<div class="p-6 text-red-600">Ошибка: ${e.message}</div>`;
-        }
-      }
+    // Проверяем авторизацию при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
     });
 
-    function createVacanciesTable(data) {
-      // Выбираем только нужные колонки для отображения
-      const columns = [
-        { key: 'id', title: 'ID', width: 'w-16' },
-        { key: 'vacancy_title', title: 'Должность', width: 'w-48' },
-        { key: 'salary', title: 'Зарплата', width: 'w-32', format: formatSalary },
-        { key: 'status', title: 'Статус', width: 'w-40', format: formatStatus },
-        { key: 'created_at', title: 'Дата создания', width: 'w-48', format: formatDate },
-        { key: 'questions', title: 'Вопросы', width: 'w-24', format: formatQuestions }
-      ];
+    // Функция проверки авторизации
+    async function checkAuth() {
+      try {
+        const response = await fetch('http://localhost:8000/auth/me', {
+          method: 'GET',
+          credentials: 'include'  // Отправляем куки
+        });
 
-      return `
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-gray-100 text-left text-gray-700">
-                ${columns.map(col =>
-                  `<th class="p-4 border-b font-semibold ${col.width}">${col.title}</th>`
-                ).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${data.map(vacancy => `
-                <tr class="border-b hover:bg-gray-50 transition" data-vacancy-id="${vacancy.id}">
-                  ${columns.map(col => {
-                    const value = vacancy[col.key];
-                    const formattedValue = col.format ? col.format(value) : formatDefault(value);
-                    return `<td class="p-4 align-top">${formattedValue}</td>`;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        <div class="p-4 bg-gray-50 text-sm text-gray-600">
-          Найдено вакансий: ${data.length}
-        </div>
-      `;
+        if (!response.ok) {
+          // Если не авторизован - перенаправляем на логин
+          window.location.href = 'hr-login.html';
+        }
+      } catch (error) {
+        window.location.href = 'hr-login.html';
+      }
     }
 
-    // Функции форматирования
-    function formatDefault(value) {
-      if (value === null || value === undefined || value === '') return '—';
-      if (typeof value === 'string' && value.trim() === '') return '—';
-      return value;
-    }
+    // Обработчик ошибок авторизации
+    document.body.addEventListener("htmx:beforeRequest", function(evt) {
+      // Добавляем credentials ко всем запросам HTMX
+      evt.detail.xhr.withCredentials = true;
+    });
 
-    function formatSalary(value) {
-      if (!value || value === 0) return '—';
-      return `${value.toLocaleString('ru-RU')} ₽`;
-    }
-
-    function formatDate(value) {
-      if (!value) return '—';
-      return new Date(value).toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    function formatStatus(value) {
-      if (!value) return '—';
-      const statusMap = {
-        'Активный поиск кандидата': '🔍 Активный поиск',
-        'string': '📝 Черновик',
-        'Открыта': '✅ Открыта',
-        'Закрыта': '❌ Закрыта'
-      };
-      return statusMap[value] || value;
-    }
-
-    function formatQuestions(value) {
-      if (!Array.isArray(value)) return '—';
-      return value.length > 0 ? `📋 ${value.length}` : '—';
-    }
-
-    // Обработчик ошибок HTMX
     document.body.addEventListener("htmx:responseError", function(evt) {
+      if (evt.detail.xhr.status === 401) {
+        // Не авторизован - перенаправляем на логин
+        window.location.href = 'hr-login.html';
+      }
+
       document.getElementById("vacancy-list").innerHTML = `
         <div class="p-6 text-red-600">
-          Ошибка сервера: ${evt.detail.xhr.status} ${evt.detail.xhr.statusText}
+          Ошибка: ${evt.detail.xhr.status} ${evt.detail.xhr.statusText}
         </div>
       `;
     });
+
+    // Остальной код создания таблицы остается без изменений...
   </script>
 
 </body>

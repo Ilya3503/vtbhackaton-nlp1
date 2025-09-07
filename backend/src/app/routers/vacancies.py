@@ -2,12 +2,13 @@ from fastapi import Depends, APIRouter, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from typing import List
 from sqlalchemy.orm import selectinload
 
 from ..models import *
 from ..db import get_session
 from ..services.ai_service import generate_ai_vacancy_suggestions
+
+from .auth import get_current_user
 
 
 
@@ -15,7 +16,7 @@ from ..services.ai_service import generate_ai_vacancy_suggestions
 router = APIRouter()
 
 @router.get("/vacancies", tags=["Получение и редактирование вакансий"], summary = "Получить список всех вакансий", response_model=List[VacancyResponse])
-async def get_vacancies_function(session: AsyncSession = Depends(get_session)):
+async def get_vacancies_function(session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(
         select(Vacancy).options(selectinload(Vacancy.questions))
     )
@@ -46,7 +47,7 @@ async def get_vacancies_function(session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Получить вакансию по id", response_model=VacancyResponse)
-async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = Depends(get_session)):
+async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(
         select(Vacancy)
         .where(Vacancy.id == vacancy_id)
@@ -79,7 +80,7 @@ async def get_vacancy_by_id_function(vacancy_id: int, session: AsyncSession = De
 
 
 @router.post("/vacancies", tags=["Создание вакансии"], summary = "Создать вакансию", response_model=VacancyResponseAI)
-async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession = Depends(get_session)):
+async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
 
 
     new_vacancy = Vacancy(
@@ -117,7 +118,7 @@ async def create_vacancy_function(vacancy: VacancyCreate, session: AsyncSession 
 
 
 @router.put("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Обновить информацию о вакансии", response_model=VacancyResponse)
-async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, session: AsyncSession = Depends(get_session)):
+async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(
         select(Vacancy).where(Vacancy.id == vacancy_id).options(selectinload(Vacancy.questions))
     )
@@ -154,7 +155,7 @@ async def update_vacancy_function(vacancy_id: int, vacancy_data: VacancyUpdate, 
 
 
 @router.delete("/vacancies/{vacancy_id}", tags=["Получение и редактирование вакансий"], summary = "Удалить вакансию", response_model=VacancyResponse)
-async def delete_vacancy(vacancy_id: int, session: AsyncSession = Depends(get_session)):
+async def delete_vacancy(vacancy_id: int, session: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     result = await session.execute(
         select(Vacancy).where(Vacancy.id == vacancy_id).options(selectinload(Vacancy.questions))
     )
